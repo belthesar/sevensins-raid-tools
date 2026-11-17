@@ -18,10 +18,13 @@ function renderTabs() {
   nav.innerHTML = '';
   tools.forEach(tool => {
     const btn = document.createElement('button');
-    btn.className = `tab${tool.id === activeToolId ? ' active' : ''}`;
+    const isActive = tool.id === activeToolId;
+    btn.className = isActive
+      ? 'button button-sm bg-primary-1 border-primary-1 text-white hover-bg-primary-2'
+      : 'button button-sm bg-transparent border-transparent text-secondary hover-text-primary';
     btn.textContent = tool.name;
     btn.setAttribute('role', 'tab');
-    btn.setAttribute('aria-selected', tool.id === activeToolId ? 'true' : 'false');
+    btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
     btn.addEventListener('click', () => {
       activeToolId = tool.id;
       renderTabs();
@@ -37,7 +40,6 @@ function renderActiveTool() {
   app.innerHTML = '';
   if (tool) {
     const container = document.createElement('div');
-    container.className = 'tool';
     tool.render(container);
     app.appendChild(container);
   }

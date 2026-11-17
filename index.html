@@ -3,45 +3,60 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Seven Sins Raid Tools</title>
-  <link rel="stylesheet" href="styles.css">
+  <title>SevenSins Raid Tools</title>
+  <link rel="icon" type="image/png" href="sevenBonk.png">
+  <link rel="stylesheet" href="dist/alloyhtml/alloy.min.css">
+  <link rel="stylesheet" href="dist/alloyhtml/dark.min.css" media="(prefers-color-scheme: dark)">
 </head>
-<body>
-  <header>
-    <h1>Seven Sins Raid Tools</h1>
-    <nav id="tabs" role="tablist"></nav>
+<body class="bg-base text-primary">
+  <header class="bg-raised border-bottom border-subtle">
+    <div class="container-1320 flex flex-items-center padding-y-16 padding-x-24">
+      <h1 class="h5 font-weight-600 text-primary margin-0">SevenSins Raid Tools</h1>
+      <nav id="tabs" class="flex flex-gap-8 margin-left-24" role="tablist"></nav>
+    </div>
   </header>
 
-  <main id="app"></main>
+  <main id="app" class="container-1320 padding-y-24 padding-x-24"></main>
 
   <template id="tpl-inventory-parser">
-    <div class="tool">
-      <h2>Inventory Parser</h2>
-      <p class="tool-description">
-        Paste Discord bot inventory output below.
-      </p>
-      <div class="options">
-        <label class="option">
+    <div class="animate animate-fade-in-up">
+      <div class="margin-bottom-16">
+        <h2 class="h4 font-weight-600 text-primary margin-0">Inventory Parser</h2>
+        <p class="text-body-2 text-secondary margin-top-4 margin-bottom-0">
+          Paste Discord bot inventory output below.
+        </p>
+      </div>
+
+      <div class="flex flex-wrap flex-gap-16 margin-bottom-16">
+        <label class="check-stroke">
           <input type="checkbox" data-ref="remove-empty" checked>
-          Remove empty lines
+          <i></i>
+          <span class="margin-left-8 text-body-2 text-secondary">Remove empty lines</span>
         </label>
-        <label class="option">
+        <label class="check-stroke">
           <input type="checkbox" data-ref="preserve-colors" checked>
-          Preserve ANSI colors for Discord (<code>```ansi</code>)
+          <i></i>
+          <span class="margin-left-8 text-body-2 text-secondary">Preserve ANSI colors for Discord (<code>```ansi</code>)</span>
         </label>
       </div>
-      <div class="panel">
-        <div class="parser-grid">
-          <label for="raw-input">Raw Discord Output</label>
-          <div class="output-actions">
-            <button class="action secondary" data-ref="load-sample">Load Sample</button>
-            <button class="action" data-ref="copy-output">Copy Cleaned</button>
+
+      <div class="bg-raised border border-subtle rounded-8 padding-16">
+        <div class="flex flex-column flex-gap-8">
+          <div class="flex flex-gap-16 flex-column-sm">
+            <label for="raw-input" class="width-50 width-100-sm text-body-3 font-weight-600 text-secondary">Raw Discord Output</label>
+            <div class="width-50 width-100-sm flex flex-justify-end flex-justify-start-sm flex-gap-8">
+              <button type="button" class="button button-sm bg-surface border-subtle text-secondary hover-bg-sunken hover-text-primary" data-ref="load-sample">Load Sample</button>
+              <button type="button" class="button button-sm bg-primary-1 border-primary-1 text-white hover-bg-primary-2" data-ref="copy-output">Copy Cleaned</button>
+            </div>
           </div>
-          <textarea id="raw-input" data-ref="raw-input" placeholder="Paste inventory here..."></textarea>
-          <pre id="clean-output" data-ref="clean-output"></pre>
+          <div class="flex flex-gap-16 flex-column-sm">
+            <textarea id="raw-input" data-ref="raw-input" class="field width-50 width-100-sm" placeholder="Paste inventory here..." style="min-height: 320px;"></textarea>
+            <pre id="clean-output" data-ref="clean-output" class="width-50 width-100-sm bg-sunken border border-subtle rounded-8 padding-12 text-body-2 text-primary overflow-auto margin-0" style="min-height: 320px; max-height: 520px;"></pre>
+          </div>
         </div>
       </div>
-      <div class="status" data-ref="parser-status"></div>
+
+      <div class="text-body-3 text-secondary margin-top-12" data-ref="parser-status"></div>
     </div>
   </template>
 
