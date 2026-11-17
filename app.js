@@ -45,6 +45,47 @@ function renderActiveTool() {
 
 // ---------- Inventory Parser ----------
 
+const STORAGE_KEY = 'seven-sins-raid-tools.inventory.raw';
+const OPTIONS_KEY = 'seven-sins-raid-tools.inventory.options';
+
+const DEFAULT_OPTIONS = {
+  removeEmpty: true,
+  preserveColors: true,
+};
+
+function loadRawInput() {
+  try {
+    return localStorage.getItem(STORAGE_KEY) || '';
+  } catch {
+    return '';
+  }
+}
+
+function saveRawInput(value) {
+  try {
+    localStorage.setItem(STORAGE_KEY, value);
+  } catch {
+    // Ignore storage errors (private mode, quota, etc.).
+  }
+}
+
+function loadOptions() {
+  try {
+    const saved = localStorage.getItem(OPTIONS_KEY);
+    return saved ? { ...DEFAULT_OPTIONS, ...JSON.parse(saved) } : DEFAULT_OPTIONS;
+  } catch {
+    return DEFAULT_OPTIONS;
+  }
+}
+
+function saveOptions(options) {
+  try {
+    localStorage.setItem(OPTIONS_KEY, JSON.stringify(options));
+  } catch {
+    // Ignore storage errors (private mode, quota, etc.).
+  }
+}
+
 const SAMPLE_INVENTORY =
 `Weapon: \x1b[37mAdroit Mythril Rod of Insight\x1b[0m \x1b[32m[II]\x1b[0m \x1b[32m(+8 INT, +11 DEX)\x1b[0m
 Weapon: \x1b[37mInsightful Steel Rod of Precision\x1b[0m \x1b[32m[II]\x1b[0m \x1b[32m(+6 INT, +5 DEX)\x1b[0m
@@ -116,12 +157,29 @@ function renderInventoryParser(container) {
     status.className = 'status';
   }
 
-  input.addEventListener('input', update);
-  removeEmptyBox.addEventListener('change', update);
-  preserveColorsBox.addEventListener('change', update);
+  function syncOptions() {
+    saveOptions({
+      removeEmpty: removeEmptyBox.checked,
+      preserveColors: preserveColorsBox.checked,
+    });
+  }
+
+  input.addEventListener('input', () => {
+    saveRawInput(input.value);
+    update();
+  });
+  removeEmptyBox.addEventListener('change', () => {
+    syncOptions();
+    update();
+  });
+  preserveColorsBox.addEventListener('change', () => {
+    syncOptions();
+    update();
+  });
 
   loadSampleBtn.addEventListener('click', () => {
     input.value = SAMPLE_INVENTORY;
+    saveRawInput(input.value);
     update();
   });
 
@@ -139,7 +197,11 @@ function renderInventoryParser(container) {
     }
   });
 
-  // Start empty so the placeholder text serves as the hint.
+  // Restore saved options and raw input, or fall back to defaults / placeholder hint.
+  const options = loadOptions();
+  removeEmptyBox.checked = options.removeEmpty;
+  preserveColorsBox.checked = options.preserveColors;
+  input.value = loadRawInput();
   update();
 }
 
