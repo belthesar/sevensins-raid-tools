@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seven Sins Raid Tools</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header>
+    <h1>Seven Sins Raid Tools</h1>
+    <nav id="tabs" role="tablist"></nav>
+  </header>
+
+  <main id="app"></main>
+
+  <template id="tpl-inventory-parser">
+    <div class="tool">
+      <h2>Inventory Parser</h2>
+      <p class="tool-description">
+        Paste Discord bot inventory output below.
+      </p>
+      <div class="options">
+        <label class="option">
+          <input type="checkbox" data-ref="remove-empty" checked>
+          Remove empty lines
+        </label>
+        <label class="option">
+          <input type="checkbox" data-ref="preserve-colors">
+          Preserve ANSI colors for Discord (<code>```ansi</code>)
+        </label>
+      </div>
+      <div class="panel">
+        <div class="parser-grid">
+          <label for="raw-input">Raw Discord Output</label>
+          <div class="output-actions">
+            <button class="action secondary" data-ref="load-sample">Load Sample</button>
+            <button class="action" data-ref="copy-output">Copy Cleaned</button>
+          </div>
+          <textarea id="raw-input" data-ref="raw-input" placeholder="Paste inventory here..."></textarea>
+          <pre id="clean-output" data-ref="clean-output"></pre>
+        </div>
+      </div>
+      <div class="status" data-ref="parser-status"></div>
+    </div>
+  </template>
+
+  <script src="app.js"></script>
+</body>
+</html>
