@@ -107,24 +107,63 @@ function stripDiscordCodes(text) {
     .replace(/\[[0-9;]*m/g, '');
 }
 
-function parseInventory(input, removeEmpty) {
-  let cleaned = stripDiscordCodes(input);
-  if (removeEmpty) {
-    cleaned = cleaned
-      .split('\n')
-      .filter(line => line.trim() !== '')
-      .join('\n');
-  }
-  return cleaned;
+const CATEGORY_ORDER = ['Weapons', 'Head Gear', 'Leg Gear', 'Chest Gear', 'Misc Items'];
+
+function detectCategory(line) {
+  const trimmed = line.trim();
+  if (/^(Weapon|Two-handed):/i.test(trimmed)) return 'Weapons';
+  if (/^Helm:/i.test(trimmed)) return 'Head Gear';
+  if (/^Legs:/i.test(trimmed)) return 'Leg Gear';
+  if (/^Chest:/i.test(trimmed)) return 'Chest Gear';
+  return 'Misc Items';
 }
 
-function countItems(text) {
-  return text.split('\n').filter(line => line.trim() !== '').length;
+function stripPrefix(line, category) {
+  const trimmed = line.trim();
+  // Keep prefixes for Weapons and Misc Items; strip for armour slots.
+  if (category === 'Weapons' || category === 'Misc Items') {
+    return trimmed;
+  }
+  return trimmed
+    .replace(/^Helm:\s*/i, '')
+    .replace(/^Legs:\s*/i, '')
+    .replace(/^Chest:\s*/i, '');
+}
+
+function parseInventory(input, removeEmpty, preserveColors) {
+  let lines = input.split('\n');
+  if (removeEmpty) {
+    lines = lines.filter(line => line.trim() !== '');
+  }
+
+  if (!preserveColors) {
+    lines = lines.map(stripDiscordCodes);
+  }
+
+  const groups = {};
+  for (const category of CATEGORY_ORDER) {
+    groups[category] = [];
+  }
+
+  for (const line of lines) {
+    const category = detectCategory(line);
+    groups[category].push(stripPrefix(line, category));
+  }
+
+  return groups;
+}
+
+function countItems(groups) {
+  return Object.values(groups).reduce((sum, items) => sum + items.length, 0);
 }
 
 function wrapInCodeBlock(text, language = '') {
   const opener = language ? '```' + language : '```';
   return opener + '\n' + text + '\n```';
+}
+
+function formatSection(items, language) {
+  return wrapInCodeBlock(items.join('\n'), language);
 }
 
 function renderInventoryParser(container) {
@@ -138,25 +177,75 @@ function renderInventoryParser(container) {
     refs[el.dataset.ref] = el;
   });
 
-  const { 'raw-input': input, 'clean-output': output, 'remove-empty': removeEmptyBox, 'preserve-colors': preserveColorsBox, 'parser-status': status, 'load-sample': loadSampleBtn, 'copy-output': copyOutputBtn } = refs;
+  const { 'raw-input': input, 'output-sections': outputSections, 'remove-empty': removeEmptyBox, 'preserve-colors': preserveColorsBox, 'parser-status': status, 'load-sample': loadSampleBtn } = refs;
+
+  async function copyText(text, button) {
+    if (!text) return;
+    const originalText = button.textContent;
+    try {
+      await navigator.clipboard.writeText(text);
+      button.textContent = 'Copied!';
+      status.textContent = 'Copied section to clipboard.';
+      status.className = 'text-body-3 margin-top-12 text-green-1';
+    } catch (err) {
+      button.textContent = 'Failed';
+      status.textContent = 'Could not copy to clipboard.';
+      status.className = 'text-body-3 margin-top-12 text-red-1';
+    }
+    setTimeout(() => {
+      button.textContent = originalText;
+      status.className = 'text-body-3 margin-top-12 text-secondary';
+      status.textContent = '';
+    }, 1800);
+  }
+
+  function renderSection(category, items) {
+    const language = preserveColorsBox.checked ? 'ansi' : '';
+    const section = document.createElement('div');
+    section.className = 'bg-sunken border border-subtle rounded-8 padding-12';
+
+    const header = document.createElement('div');
+    header.className = 'flex flex-items-center flex-justify-between margin-bottom-8';
+
+    const title = document.createElement('span');
+    title.className = 'text-body-3 font-weight-600 text-secondary';
+    title.textContent = category;
+
+    const copyBtn = document.createElement('button');
+    copyBtn.type = 'button';
+    copyBtn.className = 'button button-sm bg-primary-1 border-primary-1 text-white hover-bg-primary-2';
+    copyBtn.textContent = 'Copy';
+
+    const pre = document.createElement('pre');
+    pre.className = 'bg-base border border-subtle rounded-8 padding-12 text-body-2 text-primary overflow-auto margin-0';
+    pre.style.minHeight = '80px';
+    pre.style.maxHeight = '240px';
+    pre.textContent = formatSection(items, language);
+
+    copyBtn.addEventListener('click', () => copyText(pre.textContent, copyBtn));
+
+    header.appendChild(title);
+    header.appendChild(copyBtn);
+    section.appendChild(header);
+    section.appendChild(pre);
+    return section;
+  }
 
   function update() {
-    let cleaned;
-    if (preserveColorsBox.checked) {
-      // Keep ANSI escape codes so Discord can render them in an ansi code block.
-      cleaned = removeEmptyBox.checked
-        ? input.value.split('\n').filter(line => line.trim() !== '').join('\n')
-        : input.value;
-      output.textContent = cleaned.length ? wrapInCodeBlock(cleaned, 'ansi') : '';
-    } else {
-      cleaned = parseInventory(input.value, removeEmptyBox.checked);
-      output.textContent = cleaned.length ? wrapInCodeBlock(cleaned) : '';
+    outputSections.innerHTML = '';
+    const groups = parseInventory(input.value, removeEmptyBox.checked, preserveColorsBox.checked);
+    const itemCount = countItems(groups);
+
+    for (const category of CATEGORY_ORDER) {
+      const items = groups[category];
+      if (!items || items.length === 0) continue;
+      outputSections.appendChild(renderSection(category, items));
     }
-    const itemCount = countItems(cleaned);
-    status.textContent = cleaned.length
-      ? `${itemCount} line${itemCount === 1 ? '' : 's'} parsed`
+
+    status.textContent = itemCount
+      ? `${itemCount} item${itemCount === 1 ? '' : 's'} parsed`
       : '';
-    status.className = 'status';
+    status.className = 'text-body-3 margin-top-12 text-secondary';
   }
 
   function syncOptions() {
@@ -183,20 +272,6 @@ function renderInventoryParser(container) {
     input.value = SAMPLE_INVENTORY;
     saveRawInput(input.value);
     update();
-  });
-
-  copyOutputBtn.addEventListener('click', async () => {
-    const text = output.textContent;
-    if (!text) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      status.textContent = 'Copied cleaned output to clipboard!';
-      status.className = 'status success';
-      setTimeout(update, 1800);
-    } catch (err) {
-      status.textContent = 'Could not copy to clipboard.';
-      status.className = 'status error';
-    }
   });
 
   // Restore saved options and raw input, or fall back to defaults / placeholder hint.
